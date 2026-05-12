@@ -6,7 +6,7 @@
 #ifndef QRD_RLS_CORDIC_FOLDED_8X8_H
 #define QRD_RLS_CORDIC_FOLDED_8X8_H
 
-#include "qrd_rls_cordic_8x8.h"
+#include "../../qrd_rls_cordic_8x8.h"
 
 void qrd_rls_cordic_folded_8x8(
     hls::stream<fix18_t> &x_real_in,

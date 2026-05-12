@@ -6,7 +6,7 @@
 #ifndef SNAPSHOT_NORMALIZER_H
 #define SNAPSHOT_NORMALIZER_H
 
-#include "qrd_axis_types.h"
+#include "../../qrd_axis_types.h"
 #include <ap_int.h>
 #include <hls_stream.h>
 

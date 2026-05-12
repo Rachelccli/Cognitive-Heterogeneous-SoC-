@@ -6,7 +6,7 @@
 #ifndef STATE_BRIDGE_H
 #define STATE_BRIDGE_H
 
-#include "qrd_rls_cordic_8x8.h"
+#include "../../qrd_rls_cordic_8x8.h"
 #include <ap_int.h>
 
 void state_bridge(

@@ -18,7 +18,7 @@ struct folded_bc_result_t {
 };
 
 typedef ap_fixed<22, 8, AP_TRN, AP_SAT_SYM> folded_recip_t;
-typedef ap_fixed<24, 8, AP_TRN, AP_SAT_SYM> folded_pe_acc_t;
+typedef ap_fixed<26, 9, AP_TRN, AP_WRAP> folded_pe_acc_t;
 
 static const fix18_t FOLDED_R_INIT = (fix18_t)0.010009765625f;
 static const fix18_t FOLDED_R_MIN = (fix18_t)0.0001220703125f;
@@ -126,7 +126,7 @@ static folded_cpx_t folded_cscale(folded_cpx_t a, fix18_t s) {
 
 static folded_pe_acc_t folded_pe_mul(fix18_t a, fix18_t b) {
 #pragma HLS INLINE
-    return (folded_pe_acc_t)(a * b);
+    return (folded_pe_acc_t)((acc_t)a * (acc_t)b);
 }
 
 static folded_cpx_t folded_conj(folded_cpx_t a) {

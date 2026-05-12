@@ -5,8 +5,8 @@
 
 #include "dual_precision_qrd_top.h"
 #include "cond_estimator.h"
-#include "qrd_rls_cordic_folded_8x8.h"
-#include "qrd_rls_fp32_8x8.h"
+#include "../FIXED/qrd_rls_cordic_folded_8x8.h"
+#include "../FP32/qrd_rls_fp32_8x8.h"
 #include "snapshot_normalizer.h"
 #include "state_bridge.h"
 
@@ -22,6 +22,7 @@ void dual_precision_qrd_top(
     ap_uint<2> mode,
     float lambda,
     float cond_threshold,
+    ap_uint<16> auto_hold_window,
     ap_uint<1> reset,
     ap_uint<1> enable_norm,
     float norm_eps,
@@ -43,6 +44,7 @@ void dual_precision_qrd_top(
 #pragma HLS INTERFACE mode=s_axilite port=mode bundle=control
 #pragma HLS INTERFACE mode=s_axilite port=lambda bundle=control
 #pragma HLS INTERFACE mode=s_axilite port=cond_threshold bundle=control
+#pragma HLS INTERFACE mode=s_axilite port=auto_hold_window bundle=control
 #pragma HLS INTERFACE mode=s_axilite port=reset bundle=control
 #pragma HLS INTERFACE mode=s_axilite port=enable_norm bundle=control
 #pragma HLS INTERFACE mode=s_axilite port=norm_eps bundle=control
@@ -69,6 +71,7 @@ void dual_precision_qrd_top(
     static fix18_t fx_R_state[QRD_RLS_N][QRD_RLS_N][2];
     static fix18_t fx_z_state[QRD_RLS_N][2];
     static ap_uint<1> active_float_state = 0;
+    static ap_uint<16> auto_hold_count = 0;
 #pragma HLS ARRAY_PARTITION variable=fp_R_state complete dim=2
 #pragma HLS ARRAY_PARTITION variable=fp_R_state complete dim=3
 #pragma HLS ARRAY_PARTITION variable=fp_z_state complete dim=1
@@ -113,6 +116,7 @@ void dual_precision_qrd_top(
     }
     if (reset) {
         active_float_state = requested_float;
+        auto_hold_count = 0;
     }
     ap_uint<1> selected_float = active_float_state;
 
@@ -224,14 +228,30 @@ void dual_precision_qrd_top(
         reset
     );
 
-    // mode: 0=fixed, 1=float, 2=auto-preview via fixed-path monitor
+    // mode: 0=fixed, 1=float, 2=auto with hold-window hysteresis
     ap_uint<1> target_float = 0;
     if (mode == 1) {
         target_float = 1;
+        auto_hold_count = 0;
     } else if (mode == 2) {
-        target_float = (switch_local || overflow_local) ? ap_uint<1>(1) : ap_uint<1>(0);
+        ap_uint<1> auto_trigger = (switch_local || overflow_local) ? ap_uint<1>(1) : ap_uint<1>(0);
+        if (auto_trigger) {
+            target_float = 1;
+            auto_hold_count = auto_hold_window;
+        } else if (active_float_state) {
+            if (auto_hold_count > 0) {
+                target_float = 1;
+                auto_hold_count = auto_hold_count - 1;
+            } else {
+                target_float = 0;
+            }
+        } else {
+            target_float = 0;
+            auto_hold_count = 0;
+        }
     } else {
         target_float = 0;
+        auto_hold_count = 0;
     }
 
     write_delta:

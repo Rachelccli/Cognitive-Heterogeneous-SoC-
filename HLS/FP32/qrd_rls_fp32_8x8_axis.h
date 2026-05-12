@@ -6,7 +6,7 @@
 #ifndef QRD_RLS_FP32_8X8_AXIS_H
 #define QRD_RLS_FP32_8X8_AXIS_H
 
-#include "qrd_axis_types.h"
+#include "../../qrd_axis_types.h"
 #include <ap_int.h>
 #include <hls_stream.h>
 

@@ -6,7 +6,7 @@
 #ifndef QRD_FIXED_MONITOR_TOP_H
 #define QRD_FIXED_MONITOR_TOP_H
 
-#include "qrd_axis_types.h"
+#include "../../qrd_axis_types.h"
 #include <ap_int.h>
 #include <hls_stream.h>
 
