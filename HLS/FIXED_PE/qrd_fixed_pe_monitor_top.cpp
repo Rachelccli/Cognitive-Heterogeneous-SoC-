@@ -4,8 +4,8 @@
 // Part of: AI-Driven Dual-Precision GSC-QRD-RLS Beamforming SoC
 
 #include "qrd_fixed_pe_monitor_top.h"
-#include "../FIXED/snapshot_normalizer.h"
-#include "../FIXED/cond_estimator.h"
+#include "../COMMON/snapshot_normalizer.h"
+#include "../COMMON/cond_estimator.h"
 #include "qrd_rls_cordic_pe_8x8.h"
 
 void qrd_fixed_pe_monitor_top(

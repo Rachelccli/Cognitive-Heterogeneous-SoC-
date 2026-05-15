@@ -1,5 +1,5 @@
 // cond_estimator.h
-// Purpose: Diagonal condition estimator and Delta R_ii feature extractor.
+// Purpose: Shared diagonal condition estimator and Delta R_ii feature extractor.
 // Target: Xilinx Kria KV260, Vitis HLS 2022.2, 154MHz
 // Part of: AI-Driven Dual-Precision GSC-QRD-RLS Beamforming SoC
 

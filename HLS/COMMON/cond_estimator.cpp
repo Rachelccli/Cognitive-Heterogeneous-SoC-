@@ -1,5 +1,5 @@
 // cond_estimator.cpp
-// Purpose: Low-cost diagonal condition estimator and Delta R_ii feature stream.
+// Purpose: Shared low-cost diagonal condition estimator and Delta R_ii feature stream.
 // Target: Xilinx Kria KV260, Vitis HLS 2022.2, 154MHz
 // Part of: AI-Driven Dual-Precision GSC-QRD-RLS Beamforming SoC
 

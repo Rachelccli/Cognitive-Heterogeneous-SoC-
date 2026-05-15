@@ -1,5 +1,5 @@
 // snapshot_normalizer.h
-// Purpose: PL-side AXI4-Stream snapshot normalizer for 8-channel complex QRD-RLS frames.
+// Purpose: Shared AXI4-Stream snapshot normalizer for 8-channel complex QRD-RLS frames.
 // Target: Xilinx Kria KV260, Vitis HLS 2022.2, 154MHz
 // Part of: AI-Driven Dual-Precision GSC-QRD-RLS Beamforming SoC
 

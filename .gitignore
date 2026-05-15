@@ -1,0 +1,71 @@
+# HLS/Vivado generated projects and build products
+hls_prj*/
+.Xil/
+*.jou
+*.str
+*.log
+*.rpt
+*.xml
+*.vcd
+*.wdb
+*.bit
+*.bin
+*.xsa
+*.xo
+*.dcp
+*.ltx
+
+# Local experiment outputs
+logs/
+paper_figures/
+scene_figures/
+scheduler_sweep/
+*.csv
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.zip
+dfx_runtime.txt
+
+# Local Python/runtime caches
+__pycache__/
+*.py[cod]
+.mplconfig/
+.mplcache/
+.pytest_cache/
+
+# Private references and writing templates
+asscc_related/
+conference-latex-template/
+conference-latex-template.zip
+
+# Local-only benches and exploratory scripts
+tb_*.cpp
+plot_*.py
+compare_python_hls_alignment.py
+run_paper_experiments.py
+run_scheduler_sweep.py
+verify_dual_precision.py
+vital_sign_scene_report.py
+summarize_hls_resources.py
+
+# Local HLS run scripts are ignored by default; unignore the release IP scripts.
+run_hls_*.tcl
+run_hls_*.ps1
+run_hls_*.cmd
+!run_hls_dual_precision_qrd_top.tcl
+!run_hls_fp32_8x8_axis.tcl
+!run_hls_qrd_fixed_pe_update_top.tcl
+!run_hls_qrd_fixed_pe_monitor_top.tcl
+
+# Legacy root-level prototypes kept locally outside the release baseline
+iqrd_rls.cpp
+qrd_rls_cordic_8x8.cpp
+qrd_rls_cordic_8x8_axis.*
+qrd_rls_cordic_folded_8x8_axis.*
+
+# Legacy folded fixed path kept locally, not part of the release baseline
+HLS/FIXED/
+HLS/HYBRID/cond_estimator.*
+HLS/HYBRID/snapshot_normalizer.*
