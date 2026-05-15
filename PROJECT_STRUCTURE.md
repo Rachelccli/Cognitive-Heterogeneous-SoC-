@@ -26,13 +26,19 @@ run_hls_dual_precision_qrd_top.tcl
 run_hls_fp32_8x8_axis.tcl
 run_hls_qrd_fixed_pe_update_top.tcl
 run_hls_qrd_fixed_pe_monitor_top.tcl
+export_hls_fp32_8x8_axis.tcl
+export_hls_qrd_fixed_pe_monitor_top.tcl
+export_hls_dual_precision_qrd_top.tcl
+export_hls_all_ips.cmd
 README.md
 PROJECT_STRUCTURE.md
+DUAL_TRACK_NEXT_STEPS.md
 ```
 
 The release `run_hls_*.tcl` files are synthesis-oriented and do not depend on local `tb_*.cpp` files. C-simulation matrices remain local validation assets and are ignored.
+The `export_hls_*.tcl` files reuse synthesized HLS projects and export IPs into the ignored local `ip_repo/` directory.
 
-Keep these reports if the GitHub repository is also used as a research snapshot:
+Keep these reports only if the GitHub repository is also used as a research snapshot. They are ignored by default for the strict release branch; use `git add -f` if a separate research branch should publish them.
 
 ```text
 MAINLINE_READINESS.md
@@ -49,6 +55,7 @@ FIXED_PE_roadmap.md
 Do not commit these categories:
 
 - `hls_prj*/`: generated Vitis HLS projects, C-sim builds, synthesis reports, RTL, drivers.
+- `ip_repo/`, `vivado_prj*/`, `bd_prj*/`: exported IP packages and local Vivado integration projects.
 - `paper_figures/`, `scene_figures/`, `scheduler_sweep/`, `logs/`: generated CSV, PNG/PDF figures, and run logs.
 - `tb_*.cpp`: local C-sim testbenches and stress-matrix generators.
 - `plot_*.py`, `verify_dual_precision.py`, `compare_python_hls_alignment.py`: local analysis and plotting tools.
@@ -62,7 +69,7 @@ Do not commit these categories:
 - `HLS/FIXED_PE/qrd_fixed_pe_monitor_top.cpp` includes `../COMMON/...`.
 - `HLS/HYBRID/dual_precision_qrd_top.cpp` includes `../COMMON/...`.
 - TCL scripts should add `HLS/COMMON/cond_estimator.{h,cpp}` and `HLS/COMMON/snapshot_normalizer.{h,cpp}`.
-- The old duplicate copies under `HLS/FIXED` and `HLS/HYBRID` are local legacy files. Because they are already tracked in the current local repository, `.gitignore` alone is not enough; remove them from the release branch index before the clean GitHub commit.
+- The old duplicate copies under `HLS/FIXED` and `HLS/HYBRID` are local legacy files. If a local clone still tracks them, `.gitignore` alone is not enough; remove them from the release branch index before the clean GitHub commit.
 
 ## Release Branch Rule
 
@@ -80,11 +87,13 @@ git add HLS/HYBRID/dual_precision_qrd_top.cpp HLS/HYBRID/dual_precision_qrd_top.
 git add HLS/HYBRID/state_bridge.cpp HLS/HYBRID/state_bridge.h
 git add qrd_axis_types.h qrd_rls_cordic_8x8.h
 git add run_hls_dual_precision_qrd_top.tcl run_hls_fp32_8x8_axis.tcl run_hls_qrd_fixed_pe_update_top.tcl run_hls_qrd_fixed_pe_monitor_top.tcl
+git add export_hls_fp32_8x8_axis.tcl export_hls_qrd_fixed_pe_monitor_top.tcl export_hls_dual_precision_qrd_top.tcl export_hls_all_ips.cmd
+git add DUAL_TRACK_NEXT_STEPS.md
 ```
 
 For a strict code-only public release, stop here. For a research-snapshot branch, additionally add:
 
 ```powershell
-git add MAINLINE_READINESS.md RESOURCE_COMPARISON_LATEST.md HYBRID_LP_V1_REPORT.md HYBRID_STRESS_MATRIX_REPORT.md VITAL_SIGN_HLS_MATRIX_REPORT.md
-git add FIXED_PE_paper_architecture_assessment.md FIXED_PE_roadmap.md
+git add -f MAINLINE_READINESS.md RESOURCE_COMPARISON_LATEST.md HYBRID_LP_V1_REPORT.md HYBRID_STRESS_MATRIX_REPORT.md VITAL_SIGN_HLS_MATRIX_REPORT.md
+git add -f FIXED_PE_paper_architecture_assessment.md FIXED_PE_roadmap.md
 ```

@@ -1,5 +1,8 @@
 # HLS/Vivado generated projects and build products
 hls_prj*/
+ip_repo/
+vivado_prj*/
+bd_prj*/
 .Xil/
 *.jou
 *.str
@@ -39,6 +42,15 @@ __pycache__/
 asscc_related/
 conference-latex-template/
 conference-latex-template.zip
+
+# Local research snapshot reports; force-add these only on a research branch.
+MAINLINE_READINESS.md
+RESOURCE_COMPARISON_LATEST.md
+HYBRID_LP_V1_REPORT.md
+HYBRID_STRESS_MATRIX_REPORT.md
+VITAL_SIGN_HLS_MATRIX_REPORT.md
+FIXED_PE_paper_architecture_assessment.md
+FIXED_PE_roadmap.md
 
 # Local-only benches and exploratory scripts
 tb_*.cpp
