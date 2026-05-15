@@ -23,6 +23,7 @@ logs/
 paper_figures/
 scene_figures/
 scheduler_sweep/
+ai_vff_dataset/
 *.csv
 *.pdf
 *.png

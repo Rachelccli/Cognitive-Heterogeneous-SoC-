@@ -22,6 +22,8 @@ The next primary step is HLS IP export plus a minimal Vivado Block Design, not i
 
 Goal: get the current frozen baseline onto the board with the smallest useful system.
 
+Detailed implementation guide: `VIVADO_BD_BRINGUP_GUIDE.md`.
+
 1. Freeze and push the clean baseline.
 2. Export HLS IPs:
    - `qrd_rls_fp32_8x8_axis`
@@ -45,6 +47,8 @@ Goal: get the current frozen baseline onto the board with the smallest useful sy
 ## Track B: AI-VFF Dataset
 
 Goal: prepare GRU without touching the current hardware baseline yet.
+
+Detailed schema and workflow: `AI_VFF_DATASET_SCHEMA.md`.
 
 1. Keep rule-based VFF as the frozen controller baseline.
 2. Export features from existing HLS traces:

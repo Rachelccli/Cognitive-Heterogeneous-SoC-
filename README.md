@@ -30,3 +30,9 @@ HYBRID_LP is an activity/dynamic-power story, not a raw-area-between-FP32-and-FI
 ## Repository Hygiene
 
 Generated HLS projects, testbenches, logs, traces, figures, local papers, and plotting scripts are intentionally ignored. See `PROJECT_STRUCTURE.md` for the exact GitHub staging plan.
+
+## Next-Step Guides
+
+- `DUAL_TRACK_NEXT_STEPS.md`: current hardware-mainline / AI-side-track decision.
+- `VIVADO_BD_BRINGUP_GUIDE.md`: minimal PS-DMA-IP-PS Vivado Block Design bring-up sequence.
+- `AI_VFF_DATASET_SCHEMA.md`: HLS-to-board dataset schema and future GRU preparation workflow.

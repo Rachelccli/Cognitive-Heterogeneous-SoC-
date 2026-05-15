@@ -33,6 +33,8 @@ export_hls_all_ips.cmd
 README.md
 PROJECT_STRUCTURE.md
 DUAL_TRACK_NEXT_STEPS.md
+VIVADO_BD_BRINGUP_GUIDE.md
+AI_VFF_DATASET_SCHEMA.md
 ```
 
 The release `run_hls_*.tcl` files are synthesis-oriented and do not depend on local `tb_*.cpp` files. C-simulation matrices remain local validation assets and are ignored.
@@ -88,7 +90,7 @@ git add HLS/HYBRID/state_bridge.cpp HLS/HYBRID/state_bridge.h
 git add qrd_axis_types.h qrd_rls_cordic_8x8.h
 git add run_hls_dual_precision_qrd_top.tcl run_hls_fp32_8x8_axis.tcl run_hls_qrd_fixed_pe_update_top.tcl run_hls_qrd_fixed_pe_monitor_top.tcl
 git add export_hls_fp32_8x8_axis.tcl export_hls_qrd_fixed_pe_monitor_top.tcl export_hls_dual_precision_qrd_top.tcl export_hls_all_ips.cmd
-git add DUAL_TRACK_NEXT_STEPS.md
+git add DUAL_TRACK_NEXT_STEPS.md VIVADO_BD_BRINGUP_GUIDE.md AI_VFF_DATASET_SCHEMA.md
 ```
 
 For a strict code-only public release, stop here. For a research-snapshot branch, additionally add:
