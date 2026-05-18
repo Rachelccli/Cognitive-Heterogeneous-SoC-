@@ -36,6 +36,8 @@ It reads the existing local trace CSV files, normalizes the shared fields, appli
 ```text
 ai_vff_dataset/raw_snapshots_v0.csv
 ai_vff_dataset/manifest_v0.json
+ai_vff_dataset/windows_100.csv
+ai_vff_dataset/splits.yaml
 ```
 
 This is intentionally a **local ignored artifact path**, not a public-release data dump.
@@ -48,7 +50,7 @@ paper_figures/hls_hybrid_stress_trace.csv
 paper_figures/hls_vital_sign_trace.csv
 ```
 
-These files are local experiment artifacts and intentionally ignored by Git. A future extractor can read them, normalize the column names, generate labels, and write a local ignored dataset under:
+These files are local experiment artifacts and intentionally ignored by Git. The extractor can read them, normalize the column names, generate labels, and write a local ignored dataset under:
 
 ```text
 ai_vff_dataset/
@@ -82,24 +84,25 @@ Use three layers instead of forcing one giant CSV to do every job.
 
 One row per snapshot, one execution path per row.
 
-Suggested file:
+Current local implementation:
 
 ```text
-ai_vff_dataset/raw_snapshots.parquet
+ai_vff_dataset/raw_snapshots_v0.csv
 ```
+
+If we later want a training-optimized release artifact, we can add `parquet` without changing the schema itself.
 
 ### Layer 2: Windowed GRU Table
 
 One row per prediction point, with a 100-snapshot history window.
 
-Suggested files:
+Current local implementation:
 
 ```text
-ai_vff_dataset/windows_100.parquet
-ai_vff_dataset/windows_100.npz
+ai_vff_dataset/windows_100.csv
 ```
 
-The `parquet` file keeps metadata and scalar labels readable; the `npz` file can hold dense tensors for model training.
+The current CSV form is intentionally dependency-light. Each row keeps metadata, scalar labels, rolling summary features, and a serialized 100-step feature sequence for later tensor conversion. If we later want a training-optimized release artifact, we can add `parquet` or `npz` beside it.
 
 ### Layer 3: Split Manifest
 
@@ -232,6 +235,8 @@ Recommended ordered feature vector per snapshot:
  selected_float, active_float, migration_done, lambda_transit]
 ```
 
+The current local `windows_100.csv` generator uses exactly this feature order and stores it as a sequence payload per window.
+
 Recommended tensor shape:
 
 ```text
@@ -251,6 +256,8 @@ scene_state
 target_precision
 target_lambda_bin
 ```
+
+For dataset `v0`, the window generator should use `HYBRID_LP` sequences as the teacher path by default. That keeps the labels aligned with the frozen rule-based controller we actually want the later GRU to imitate or improve upon.
 
 The numeric lambda can be reconstructed from `target_lambda_bin` plus the configured base/mid/fast schedule, or predicted directly later if the discrete version is too coarse.
 
