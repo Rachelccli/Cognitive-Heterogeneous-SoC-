@@ -4,6 +4,18 @@
 
 The next primary step is HLS IP export plus a minimal Vivado Block Design, not immediate GRU integration.
 
+Status update:
+
+- board bring-up for `FP32`, `FIXED_PE`, and `HYBRID_LP` is already established;
+- the current highest-value immediate work is now:
+  1. freeze the validated `HYBRID_LP` scheduler point,
+  2. extend vital-sign evidence,
+  3. extract AI-VFF dataset `v0`.
+
+For the exact freeze conclusion and milestone ordering, see:
+
+- `CURRENT_FREEZE_AND_NEXT_STEPS.md`
+
 ## Why IP Export Comes First
 
 1. The three HLS engines are already stable enough to freeze:

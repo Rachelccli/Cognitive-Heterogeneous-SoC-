@@ -89,6 +89,7 @@ void dual_precision_qrd_top(
     static ap_uint<6> lambda_fast_hold_count = 0;
     static ap_uint<4> steady_highcond_streak = 0;
     static ap_uint<4> extreme_highcond_streak = 0;
+    static ap_uint<5> float_base_recover_streak = 0;
     static float lambda_state = 0.955f;
 #pragma HLS ARRAY_PARTITION variable=fp_R_state complete dim=2
 #pragma HLS ARRAY_PARTITION variable=fp_R_state complete dim=3
@@ -141,6 +142,7 @@ void dual_precision_qrd_top(
         lambda_fast_hold_count = 0;
         steady_highcond_streak = 0;
         extreme_highcond_streak = 0;
+        float_base_recover_streak = 0;
         lambda_state = dual_clampf(lambda, 0.87f, 0.995f);
     }
     ap_uint<1> selected_float = active_float_state;
@@ -280,7 +282,7 @@ void dual_precision_qrd_top(
         trigger_streak = 0;
         calm_streak = 0;
     } else if (mode == 2 || mode == 3) {
-        const float threshold = (cond_threshold > 0.0f) ? cond_threshold : 1000.0f;
+        const float threshold = dual_maxf((cond_threshold > 0.0f) ? cond_threshold : 1000.0f, 460.0f);
         const float enter_cond = dual_maxf(threshold * 0.92f, 220.0f);
         const float exit_cond = threshold * 0.72f;
         const float enter_delta = 0.34f;
@@ -364,11 +366,12 @@ void dual_precision_qrd_top(
 
     float lambda_next = dual_clampf(lambda, 0.87f, 0.995f);
     if (mode == 2) {
-        const float threshold = (cond_threshold > 0.0f) ? cond_threshold : 1000.0f;
+        const float threshold = dual_maxf((cond_threshold > 0.0f) ? cond_threshold : 1000.0f, 460.0f);
         const float lambda_base = dual_clampf(lambda, 0.90f, 0.995f);
         const float lambda_mid = dual_clampf(lambda_base - 0.025f, 0.90f, lambda_base);
         const float lambda_fast = dual_clampf(lambda_base - 0.055f, 0.87f, lambda_base);
         const ap_uint<6> lambda_fast_hold_window = 40;
+        const ap_uint<5> float_base_recover_streak_req = 12;
 
         ap_uint<1> burst_like_event = 0;
         if (delta_norm_local > 1.00f) {
@@ -417,9 +420,29 @@ void dual_precision_qrd_top(
             extreme_highcond_streak = 0;
         }
 
+        ap_uint<1> float_base_recover_calm = 0;
+        if (active_float_state &&
+            !overflow_local &&
+            !burst_like_event &&
+            lambda_fast_hold_count == 0 &&
+            delta_norm_local < 0.03f &&
+            scale_local < 2.50f &&
+            cond_local < threshold * 6.0f) {
+            float_base_recover_calm = 1;
+        }
+        if (float_base_recover_calm) {
+            if (float_base_recover_streak < 31) {
+                float_base_recover_streak = float_base_recover_streak + 1;
+            }
+        } else {
+            float_base_recover_streak = 0;
+        }
+
         if (overflow_local) {
             lambda_next = lambda_fast;
         } else if (extreme_highcond_streak >= 6) {
+            lambda_next = lambda_base;
+        } else if (float_base_recover_streak >= float_base_recover_streak_req) {
             lambda_next = lambda_base;
         } else if (steady_highcond_streak >= 6) {
             lambda_next = lambda_mid;
@@ -438,6 +461,13 @@ void dual_precision_qrd_top(
         }
     } else if (mode == 3) {
         lambda_next = dual_clampf(lambda, 0.87f, 0.995f);
+    }
+
+    if (mode != 2) {
+        lambda_fast_hold_count = 0;
+        steady_highcond_streak = 0;
+        extreme_highcond_streak = 0;
+        float_base_recover_streak = 0;
     }
 
     write_delta:

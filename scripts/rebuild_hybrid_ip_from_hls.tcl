@@ -1,0 +1,5 @@
+open_project hls_prj_dual_precision_qrd_top
+open_solution solution1
+csynth_design
+export_design -format ip_catalog -rtl verilog -output ip_repo/dual_precision_qrd_top
+exit

@@ -25,6 +25,21 @@ The dataset task is therefore a data-engineering task first, not a new RTL task.
 
 Current HLS traces are enough to build dataset version `v0` automatically. No manual spreadsheet work is required.
 
+The current repository now includes a first local extractor scaffold:
+
+```text
+scripts/extract_ai_vff_dataset_v0.py
+```
+
+It reads the existing local trace CSV files, normalizes the shared fields, applies deterministic teacher labels, and writes:
+
+```text
+ai_vff_dataset/raw_snapshots_v0.csv
+ai_vff_dataset/manifest_v0.json
+```
+
+This is intentionally a **local ignored artifact path**, not a public-release data dump.
+
 Expected local sources include:
 
 ```text

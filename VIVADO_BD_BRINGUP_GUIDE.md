@@ -123,34 +123,127 @@ Use Simple DMA mode first:
   - MM2S disabled if possible.
   - S2MM enabled, stream width `32`.
 
-### Connections
+### Complete FP32 Connection Matrix
 
-#### Control and memory-mapped paths
+Use two SmartConnect blocks for clarity:
 
-| Source | Destination |
-| --- | --- |
-| PS `M_AXI_HPM0_FPD` | AXI SmartConnect |
-| AXI SmartConnect | `axi_dma_data/S_AXI_LITE` |
-| AXI SmartConnect | `axi_dma_aux/S_AXI_LITE` |
-| AXI SmartConnect | `qrd_rls_fp32_8x8_axis/s_axi_control` |
-| `axi_dma_data/M_AXI_MM2S` | SmartConnect -> PS HP/HPC port |
-| `axi_dma_data/M_AXI_S2MM` | SmartConnect -> PS HP/HPC port |
-| `axi_dma_aux/M_AXI_S2MM` | SmartConnect -> PS HP/HPC port |
+- `sc_ctrl`: AXI-Lite control path from PS to DMA/HLS registers.
+- `sc_mem`: AXI memory path from DMA masters to PS DDR through an HP/HPC port.
 
-#### AXI4-Stream paths
+Vivado names SmartConnect ports as `Sxx_AXI` for incoming masters and `Mxx_AXI` for outgoing slaves. This is the most common source of confusion: a DMA `M_AXI_*` master connects into a SmartConnect `Sxx_AXI` port.
 
-| Source | Destination |
-| --- | --- |
-| `axi_dma_data/M_AXIS_MM2S` | `qrd_rls_fp32_8x8_axis/snapshot_in` |
-| `qrd_rls_fp32_8x8_axis/weights_out` | `axi_dma_data/S_AXIS_S2MM` |
-| `qrd_rls_fp32_8x8_axis/diag_out` | `axi_dma_aux/S_AXIS_S2MM` |
+#### Zynq MPSoC PS Ports
 
-#### Clock and reset
+| PS port | Connect to | Purpose | Notes |
+| --- | --- | --- | --- |
+| `M_AXI_HPM0_FPD` | `sc_ctrl/S00_AXI` | PS writes AXI-Lite control registers in DMA and HLS IP | Enable this PS master port in block automation |
+| `S_AXI_HP0_FPD` or `S_AXI_HPC0_FPD` | `sc_mem/M00_AXI` | DMA masters read/write PS DDR | Enable one HP/HPC slave port for PL masters |
+| `pl_clk0` | all PL `*_aclk` / `ap_clk` inputs | Common PL clock | Start with `100 MHz` or `150 MHz` |
+| `pl_resetn0` | reset generator input via block automation | Source reset for PL reset tree | Use Vivado automation if possible |
+| `maxihpm0_fpd_aclk` | `pl_clk0` | Clock for PS AXI-Lite master interface | Required when `M_AXI_HPM0_FPD` is enabled |
+| `saxihp0_fpd_aclk` or matching HP/HPC clock | `pl_clk0` | Clock for PS HP/HPC DDR-facing slave interface | Port name changes with selected HP/HPC interface |
+| `pl_ps_irq0` | optional `xlconcat/dout` | Optional interrupt input from DMA/HLS | Polling works without this in the first smoke test |
 
-| Signal | Destination |
-| --- | --- |
-| PS `pl_clk0` | HLS `ap_clk`, both DMA clocks, SmartConnect clocks |
-| `proc_sys_reset/peripheral_aresetn` | HLS `ap_rst_n`, both DMA resets |
+#### AXI-Lite Control Path
+
+| Source port | Destination port | Bus width | Purpose | Notes |
+| --- | --- | ---: | --- | --- |
+| `zynq_ultra_ps_e_0/M_AXI_HPM0_FPD` | `sc_ctrl/S00_AXI` | AXI | PS master enters control interconnect | One PS control master is enough |
+| `sc_ctrl/M00_AXI` | `axi_dma_data/S_AXI_LITE` | AXI-Lite | Program data DMA control/status registers | Required for MM2S input and S2MM weights receive |
+| `sc_ctrl/M01_AXI` | `axi_dma_aux/S_AXI_LITE` | AXI-Lite | Program auxiliary DMA receive channel | Required for `diag_out`; otherwise HLS can stall |
+| `sc_ctrl/M02_AXI` | `qrd_rls_fp32_8x8_axis_0/s_axi_control` | AXI-Lite | Program HLS registers: `lambda`, `reset`, `ap_start`; read `frame_error` | Scalar HLS ports are registers inside this bus |
+
+#### AXI Memory-Mapped DDR Path
+
+| Source port | Destination port | Bus width | Purpose | Notes |
+| --- | --- | ---: | --- | --- |
+| `axi_dma_data/M_AXI_MM2S` | `sc_mem/S00_AXI` | AXI | Data DMA reads input snapshots from DDR | PS fills a 72-byte input buffer |
+| `axi_dma_data/M_AXI_S2MM` | `sc_mem/S01_AXI` | AXI | Data DMA writes `weights_out` back to DDR | PS reads a 64-byte output buffer |
+| `axi_dma_aux/M_AXI_S2MM` | `sc_mem/S02_AXI` | AXI | Auxiliary DMA writes `diag_out` back to DDR | PS reads a 32-byte diagnostic buffer |
+| `sc_mem/M00_AXI` | `zynq_ultra_ps_e_0/S_AXI_HP0_FPD` or `S_AXI_HPC0_FPD` | AXI | All DMA memory transactions reach PS DDR | Use the same HP/HPC port clocked by `pl_clk0` |
+
+If `axi_dma_aux` still has an unused `M_AXI_MM2S` because MM2S was not disabled, either disable MM2S in IP customization or leave that channel unconnected only if Vivado validation allows it. The clean design disables the unused MM2S channel.
+
+#### AXI4-Stream Data Path
+
+| Source port | Destination port | Width | Beats | Purpose | TLAST rule |
+| --- | --- | ---: | ---: | --- | --- |
+| `axi_dma_data/M_AXIS_MM2S` | `qrd_rls_fp32_8x8_axis_0/snapshot_in` | 64 bit | 9 | Send one snapshot: 8 array channels plus reference | Input `TLAST` on beat 8 |
+| `qrd_rls_fp32_8x8_axis_0/weights_out` | `axi_dma_data/S_AXIS_S2MM` | 64 bit | 8 | Receive 8 complex adaptive weights | Output `TLAST` on beat 7 |
+| `qrd_rls_fp32_8x8_axis_0/diag_out` | `axi_dma_aux/S_AXIS_S2MM` | 32 bit | 8 | Receive 8 FP32 diagonal diagnostics | Output `TLAST` on beat 7 |
+
+If Vivado reports an AXIS data-width mismatch, fix the DMA stream width in customization first. If the GUI still cannot match widths, insert an `AXIS Data Width Converter` only on the mismatched stream. Do not change the HLS IP interface just to satisfy the first BD.
+
+#### Clock Connections
+
+| Source clock | Destination clock pins | Purpose | Notes |
+| --- | --- | --- | --- |
+| `zynq_ultra_ps_e_0/pl_clk0` | `qrd_rls_fp32_8x8_axis_0/ap_clk` | HLS kernel clock | Same clock domain keeps debug simple |
+| `zynq_ultra_ps_e_0/pl_clk0` | `axi_dma_data/s_axi_lite_aclk` | Data DMA AXI-Lite clock | Required |
+| `zynq_ultra_ps_e_0/pl_clk0` | `axi_dma_data/m_axi_mm2s_aclk` | Data DMA MM2S memory clock | Required |
+| `zynq_ultra_ps_e_0/pl_clk0` | `axi_dma_data/m_axi_s2mm_aclk` | Data DMA S2MM memory clock | Required |
+| `zynq_ultra_ps_e_0/pl_clk0` | `axi_dma_aux/s_axi_lite_aclk` | Aux DMA AXI-Lite clock | Required |
+| `zynq_ultra_ps_e_0/pl_clk0` | `axi_dma_aux/m_axi_s2mm_aclk` | Aux DMA S2MM memory clock | Required |
+| `zynq_ultra_ps_e_0/pl_clk0` | `sc_ctrl/aclk`, `sc_mem/aclk` | SmartConnect clocks | Port names can appear as `aclk` or `aclk0` depending on Vivado |
+| `zynq_ultra_ps_e_0/pl_clk0` | `proc_sys_reset_0/slowest_sync_clk` | Reset synchronizer clock | Required |
+| `zynq_ultra_ps_e_0/pl_clk0` | PS AXI interface clocks such as `maxihpm0_fpd_aclk`, `saxihp0_fpd_aclk` | Clock PS AXI ports | Exact HP/HPC clock pin depends on selected PS interface |
+
+For first bring-up, keep every PL-side interface in one clock domain. Multi-clock refinement can wait until the design works.
+
+#### Reset Connections
+
+| Source reset | Destination reset pins | Polarity | Purpose | Notes |
+| --- | --- | --- | --- | --- |
+| PS reset via block automation | `proc_sys_reset_0/ext_reset_in` | Vivado-managed | Generate synchronized PL resets | Let Vivado block automation handle PS reset polarity |
+| `proc_sys_reset_0/peripheral_aresetn` | `qrd_rls_fp32_8x8_axis_0/ap_rst_n` | active-low | Reset HLS IP | Required |
+| `proc_sys_reset_0/peripheral_aresetn` | `axi_dma_data/axi_resetn` | active-low | Reset data DMA | Required |
+| `proc_sys_reset_0/peripheral_aresetn` | `axi_dma_aux/axi_resetn` | active-low | Reset auxiliary DMA | Required |
+| `proc_sys_reset_0/peripheral_aresetn` | `sc_ctrl/aresetn`, `sc_mem/aresetn` | active-low | Reset SmartConnect | Required |
+
+Do not connect `pl_resetn0` directly to random active-high reset pins. Use `Processor System Reset`; it exists to make this boring and safe.
+
+#### Optional Interrupt Connections
+
+| Source interrupt | Destination | Purpose | First-pass recommendation |
+| --- | --- | --- | --- |
+| `axi_dma_data/mm2s_introut` | `xlconcat/In0` | Data DMA send completion/error interrupt | Optional; polling is simpler first |
+| `axi_dma_data/s2mm_introut` | `xlconcat/In1` | Weights receive completion/error interrupt | Optional |
+| `axi_dma_aux/s2mm_introut` | `xlconcat/In2` | Diagnostics receive completion/error interrupt | Optional |
+| `qrd_rls_fp32_8x8_axis_0/interrupt` | `xlconcat/In3` | HLS `ap_done` interrupt | Optional |
+| `xlconcat/dout` | `zynq_ultra_ps_e_0/pl_ps_irq0` | Route PL interrupts to PS | Add after polling version works |
+
+For the first bring-up, polling AXI DMA status and HLS `ap_done` is less magical. Interrupts are useful later, but they add one more thing that can go wrong while the first smoke test is still fragile.
+
+#### Address Editor Expectations
+
+| Address segment | Master | Slave | Purpose |
+| --- | --- | --- | --- |
+| HLS control segment | PS `M_AXI_HPM0_FPD` | `qrd_rls_fp32_8x8_axis_0/s_axi_control` | HLS `ap_start`, `lambda`, `reset`, `frame_error` |
+| Data DMA control segment | PS `M_AXI_HPM0_FPD` | `axi_dma_data/S_AXI_LITE` | DMA MM2S/S2MM programming |
+| Aux DMA control segment | PS `M_AXI_HPM0_FPD` | `axi_dma_aux/S_AXI_LITE` | Diagnostic S2MM programming |
+| DDR segment for data DMA MM2S | `axi_dma_data/M_AXI_MM2S` | PS DDR through HP/HPC | Read input snapshot buffer |
+| DDR segment for data DMA S2MM | `axi_dma_data/M_AXI_S2MM` | PS DDR through HP/HPC | Write weights buffer |
+| DDR segment for aux DMA S2MM | `axi_dma_aux/M_AXI_S2MM` | PS DDR through HP/HPC | Write diag buffer |
+
+The exact base addresses are assigned by Vivado. The HLS register offsets inside the HLS base address remain fixed: `ap_ctrl=0x00`, `lambda=0x10`, `reset=0x18`, `frame_error=0x20`.
+
+#### Address Warning Triage
+
+Treat these Vivado validation messages as actionable, not cosmetic:
+
+| Warning pattern | Impact | Fix |
+| --- | --- | --- |
+| `qrd_rls_fp32_8x8_axis_0/s_axi_control/Reg is not assigned into zynq.../Data` | PS cannot start/configure the HLS IP or read `frame_error` | Assign it under PS `Data`, for example base `0xA002_0000`, range `64K` |
+| `axi_dma_0/S_AXI_LITE/Reg is not assigned into zynq.../Data` | PS cannot program the data DMA | Assign it under PS `Data`, for example base `0xA000_0000`, range `64K` |
+| `axi_dma_1/S_AXI_LITE/Reg is not assigned into zynq.../Data` | PS cannot program the aux DMA | Assign it under PS `Data`, for example base `0xA001_0000`, range `64K` |
+| `HP0_DDR_LOW is not assigned into axi_dma_0/Data_S2MM` | Data DMA cannot legally write `weights_out` to DDR | Assign `HP0_DDR_LOW` into `axi_dma_0/Data_S2MM` |
+| `HP0_DDR_LOW is not assigned into axi_dma_1/Data_S2MM` | Aux DMA cannot legally write `diag_out` to DDR | Assign `HP0_DDR_LOW` into `axi_dma_1/Data_S2MM` |
+| `HP0_QSPI`, `HP0_LPS_OCM`, or unused `HP0_DDR_HIGH` not assigned | Usually harmless if the first test only uses low DDR | Right-click and `Exclude` unused segments |
+| `SmartConnect ... has no assigned address segments` | Active interconnect may become undefined or black-box during implementation | Assign address segments through it, or delete it if it is an unused leftover SmartConnect |
+
+For the first design, map all active DMA masters to `HP0_DDR_LOW`. It is okay for `axi_dma_0/Data_MM2S`, `axi_dma_0/Data_S2MM`, and `axi_dma_1/Data_S2MM` to see the same DDR low address segment; these are separate master address spaces. Keep input, weights, and diagnostics in separate software buffers, not necessarily separate BD address windows.
+
+Do not split DDR into artificial non-overlapping windows unless the software allocator is also constrained to place buffers inside those windows. A full `HP0_DDR_LOW` mapping is less fragile for the first bare-metal or Linux DMA smoke test.
 
 ### GUI Sequence
 

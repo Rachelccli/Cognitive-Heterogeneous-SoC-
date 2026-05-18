@@ -1,6 +1,6 @@
 # Runtime-Adaptive Dual-Precision QRD-RLS Beamforming
 
-This repository contains the 2026-05-14 frozen HLS mainline for a runtime-adaptive dual-precision QRD-RLS beamforming accelerator targeting Xilinx Kria KV260 / Vitis HLS.
+This repository contains the frozen HLS mainline for a runtime-adaptive dual-precision QRD-RLS beamforming accelerator targeting Xilinx Kria KV260 / Vitis HLS.
 
 ## Main Blocks
 
@@ -34,5 +34,6 @@ Generated HLS projects, testbenches, logs, traces, figures, local papers, and pl
 ## Next-Step Guides
 
 - `DUAL_TRACK_NEXT_STEPS.md`: current hardware-mainline / AI-side-track decision.
+- `CURRENT_FREEZE_AND_NEXT_STEPS.md`: current freeze decision, phase-gate result, and the exact next-task order.
 - `VIVADO_BD_BRINGUP_GUIDE.md`: minimal PS-DMA-IP-PS Vivado Block Design bring-up sequence.
 - `AI_VFF_DATASET_SCHEMA.md`: HLS-to-board dataset schema and future GRU preparation workflow.
